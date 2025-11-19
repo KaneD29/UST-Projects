@@ -1,0 +1,242 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Oct  5 13:23:20 2025
+
+@author: dungc
+"""
+
+from dataclasses import dataclass
+from typing import Optional, List
+
+@dataclass
+class MaterialProperties:
+    """Properties of a material."""
+    density: float  # kg/m³
+    yield_strength: float  # MPa
+    typical_youngs_modulus: float  # GPa
+    
+    def __post_init__(self):
+        """Validate properties."""
+        if self.density <= 0:
+            raise ValueError("Density must be positive")
+        if self.yield_strength <= 0:
+            raise ValueError("Yield strength must be positive")
+        if self.typical_youngs_modulus <= 0:
+            raise ValueError("Young's modulus must be positive")
+
+class Material:
+    """Base class for all materials."""
+    
+    def __init__(self, name: str, properties: MaterialProperties):
+        self.name = name
+        self.properties = properties
+    
+    def __str__(self) -> str:
+        return f"{self.name} (Density: {self.properties.density} kg/m³)"
+    
+    def can_withstand_stress(self, stress: float) -> bool:
+        """Check if the material can withstand the given stress."""
+        # Convert GPa to MPa for comparison
+        return stress < self.properties.yield_strength
+
+class StressStrainTest:
+    """A single stress-strain test."""
+    
+    def __init__(self, material: Material, force: float, area: float, 
+                 original_length: float, change_in_length: float):
+        self.material = material
+        self._force = force
+        self._area = area
+        self._original_length = original_length
+        self._change_in_length = change_in_length
+        
+        # Validate inputs
+        if force <= 0:
+            raise ValueError("Force must be positive")
+        if area <= 0:
+            raise ValueError("Area must be positive")
+        if original_length <= 0:
+            raise ValueError("Original length must be positive")
+        # Change in length can be negative (compression)
+    
+    @property
+    def stress(self) -> float:
+        """Calculate stress in MPa."""
+        return self._force / self._area
+    
+    @property
+    def strain(self) -> float:
+        """Calculate strain (dimensionless)."""
+        return self._change_in_length / self._original_length
+    
+    @property
+    def youngs_modulus(self) -> float:
+        """Calculate Young's modulus in GPa."""
+        # Convert to GPa from MPa
+        return (self.stress / self.strain) / 1000
+    
+    def will_fail(self) -> bool:
+        """Determine if the material is likely to fail under this test."""
+        return not self.material.can_withstand_stress(self.stress)
+    
+    def __str__(self) -> str:
+        return (f"Test on {self.material.name}: "
+                f"Stress={self.stress:.2f} MPa, "
+                f"Strain={self.strain:.6f}, "
+                f"Young's Modulus={self.youngs_modulus:.2f} GPa")
+
+# Example material subclass
+class Metal(Material):
+    """A metal material."""
+    
+    def __init__(self, name: str, properties: MaterialProperties, 
+                 is_ferrous: bool = False):
+        super().__init__(name, properties)
+        self.is_ferrous = is_ferrous
+    
+    def __str__(self) -> str:
+        ferrous_text = "Ferrous" if self.is_ferrous else "Non-ferrous"
+        return f"{self.name} ({ferrous_text} metal, Density: {self.properties.density} kg/m³)"
+
+class Plastic(Material):
+    """A Plastic Material"""
+    
+    def __init__(self, name, properties: MaterialProperties, is_elastic: bool =  True, temp_res = 250):
+        super().__init__(name, properties)
+        self.is_elastic = is_elastic
+        self.temp_res = temp_res
+        if self.temp_res <= 0:
+            raise ValueError("Temperature resistance must be positive")
+    
+    def __str__(self):
+        elasticity_text = "Elastic" if self.is_elastic else "Non-elastic"
+        return f"{self.name} (Plastic, {elasticity_text}, Temp Resistance: {self.temp_res}°C)"
+
+class Composite(Material):
+    """A Composite Material"""
+    
+    def __init__(self, name, properties: MaterialProperties, fiber_type: str, matrix_type: str):
+        # Call the base class constructor
+        super().__init__(name, properties)
+        
+        # Store subclass-specific attributes
+        self.fiber_type = fiber_type
+        self.matrix_type = matrix_type
+        
+        # Validation
+        if not self.fiber_type:
+            raise ValueError("Fiber type cannot be empty")
+        if not self.matrix_type:
+            raise ValueError("Matrix type cannot be empty")
+    
+    def __str__(self):
+        # Provide a readable description
+        return f"{self.name} (Composite: Fiber={self.fiber_type}, Matrix={self.matrix_type})"
+    
+class TestAnalysisSystem:
+    """System to compare and analyze materials and stress-strain tests."""
+    
+    def __init__(self, materials=None, tests=None):
+        self.materials = materials if materials else []
+        self.tests = tests if tests else []
+    
+    # ----- Material rankings -----
+    def rank_materials_by_yield_strength(self):
+        return sorted(self.materials, key=lambda m: m.properties.yield_strength, reverse=True)
+    
+    def rank_materials_by_density(self):
+        return sorted(self.materials, key=lambda m: m.properties.density)
+    
+    # ----- Test rankings -----
+    def rank_tests_by_stress(self):
+        return sorted(self.tests, key=lambda t: t.stress, reverse=True)
+    
+    def rank_tests_by_strain(self):
+        return sorted(self.tests, key=lambda t: t.strain, reverse=True)
+    
+    # ----- Failed tests -----
+    def failed_tests(self):
+        return [t for t in self.tests if t.will_fail()]
+    
+    # ----- Summary report -----
+    def summary_report(self):
+        print("=== Material Rankings by Yield Strength ===")
+        for m in self.rank_materials_by_yield_strength():
+            print(f"{m.name}: {m.properties.yield_strength} MPa")
+        
+        print("\n=== Tests that Failed ===")
+        for t in self.failed_tests():
+            print(f"{t.material.name}: Stress={t.stress:.2f} MPa, Strain={t.strain:.6f}")
+        
+        print("\n=== Tests Ranked by Observed Stress ===")
+        for t in self.rank_tests_by_stress():
+            print(f"{t.material.name}: Stress={t.stress:.2f} MPa")
+
+
+
+# Example usage
+steel_properties = MaterialProperties(
+    density=7850,
+    yield_strength=250,  # MPa
+    typical_youngs_modulus=200  # GPa
+)
+
+steel = Metal("Steel", steel_properties, is_ferrous=True)
+test = StressStrainTest(steel, force=5000, area=25, original_length=100, change_in_length=0.5)
+
+# Metals
+steel_props = MaterialProperties(density=7850, yield_strength=250, typical_youngs_modulus=200)
+aluminum_props = MaterialProperties(density=2700, yield_strength=150, typical_youngs_modulus=70)
+
+# Plastic
+poly_props = MaterialProperties(density=950, yield_strength=60, typical_youngs_modulus=2)
+
+# Composite
+carbon_fiber_props = MaterialProperties(density=1600, yield_strength=500, typical_youngs_modulus=150)
+
+steel = Metal("Steel", steel_props, is_ferrous=True)
+aluminum = Metal("Aluminum", aluminum_props, is_ferrous=False)
+polyethylene = Plastic("Polyethylene", poly_props, is_elastic=True, temp_res=120)
+carbon_fiber = Composite("Carbon Fiber Composite", carbon_fiber_props, fiber_type="Carbon", matrix_type="Epoxy")
+
+test1 = StressStrainTest(steel, force=5000, area=25, original_length=100, change_in_length=0.5)
+test2 = StressStrainTest(aluminum, force=3000, area=20, original_length=100, change_in_length=0.8)
+test3 = StressStrainTest(polyethylene, force=1000, area=15, original_length=100, change_in_length=2.0)
+test4 = StressStrainTest(carbon_fiber, force=4000, area=10, original_length=100, change_in_length=0.3)
+
+
+materials = [steel, aluminum, polyethylene, carbon_fiber]
+tests = [test1, test2, test3, test4]
+
+
+
+print(steel)
+print(test)
+print(f"Will the material fail? {'Yes' if test.will_fail() else 'No'}")
+print(f"Calculated Young's modulus: {test.youngs_modulus:.2f} GPa")
+print(f"Typical Young's modulus: {steel.properties.typical_youngs_modulus:.2f} GPa")
+
+
+for t in tests:
+    print(t)
+    print(f"Will the material fail? {'Yes' if t.will_fail() else 'No'}")
+    print(f"Calculated Young's modulus: {t.youngs_modulus:.2f} GPa")
+    print()
+
+analysis = TestAnalysisSystem(materials=materials, tests=tests)
+
+analysis.rank_materials_by_yield_strength()  # returns materials sorted by strength
+analysis.failed_tests()                      # returns failed tests
+analysis.summary_report()                     # prints full summary
+
+
+import matplotlib.pyplot as plt
+
+for t in tests:
+    plt.plot(t.strain, t.stress, marker='o', label=t.material.name)
+
+plt.xlabel("Strain")
+plt.ylabel("Stress (MPa)")
+plt.title("Stress-Strain Curves")
+plt.legend()
+plt.show()
