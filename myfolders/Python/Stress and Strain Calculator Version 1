@@ -1,0 +1,49 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Sep 20 17:22:53 2025
+
+@author: dungc
+"""
+
+# STRESS AND STRAIN CALCULATOR (FIXED VERSION)
+
+flag = True
+while flag:
+    try:
+        fr = float(input("What's your applied force (N)? "))
+        ar = float(input("What's your area in square meters (m^2)? "))
+        cl = float(input("What's your current length (m)? "))
+        ol = float(input("What's your original length (m)? "))
+
+        # Zero or negative guards
+        if ar <= 0 or ol <= 0:
+            print("Error: Area and original length must be greater than zero.")
+            continue  # Restart loop safely
+
+        # Correct formula for stress and strain
+        stress = fr / ar
+        strain = cl / ol
+
+        # Display results
+        print(f"\nStress: {stress:.2f} Pa")
+        print(f"Strain: {strain:.6f} (dimensionless)")
+
+        ch1 = input("Do you want to see Pa to psi? (y/n): ").lower()
+        if ch1 == "y":
+            print(f"Pa to psi: {stress / 6895:.6f}")
+
+        ch2 = input("Do you want to see Young's modulus? (y/n): ").lower()
+        if ch2 == "y":
+            print(f"Young's modulus: {stress / strain:.2f} Pa")
+
+    except ValueError:
+        print("Invalid input. Please enter numeric values only.")
+    except ZeroDivisionError:
+        print("Error: Division by zero occurred. Check your inputs.")
+
+    # Exit prompt
+    ch = input("\nDo you want to stop? (y/n): ").lower()
+    if ch == "y":
+        flag = False
+
+print("Program ended successfully.")
