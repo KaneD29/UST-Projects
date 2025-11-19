@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<head><title>Aaron Kane Dungca MD5 Cracker</title></head>
+<body>
+<h1>MD5 cracker</h1>
+<p>This application takes an MD5 hash
+of a 4 digit PIN and 
+attempts to hash all four-character combinations
+to determine the original four characters.</p>
+<pre>
+Debug Output:
+<?php
+$goodtext = "Not found";
+// If there is no parameter, this code is all skipped
+if ( isset($_GET['md5']) ) {
+    $time_pre = microtime(true);
+    $md5 = $_GET['md5'];
+
+    $num = "0123456789";
+    $show = 15;
+    $attempts = 0;
+
+    for($i=0; $i<strlen($num); $i++ ) {
+        $d1 = $num[$i];  
+
+        for($j=0; $j<strlen($num); $j++ ) {
+            $d2 = $num[$j];  
+        
+            for($l=0; $l<strlen($num); $l++ ) {
+                $d3 = $num[$l]; 
+            
+                for($n=0; $n<strlen($num); $n++ ) {
+                    $d4 = $num[$n];  
+
+                    $try = $d1.$d2.$d3.$d4;
+                    $attempts++;
+
+                    $check = hash('md5', $try);
+
+                    if ($attempts <= 15) {
+                        print "DEBUG: $check $try\n";
+                    } 
+                    if ( $check == $md5 ) {
+                    $goodtext = $try;
+                    break 4; 
+                    }
+                }
+            }
+        }
+    }    
+ 
+    // Compute elapsed time
+    $time_post = microtime(true);
+    print "Elapsed time: ";
+    print $time_post-$time_pre;
+    print "\n";
+}
+?>
+</pre>
+<p>PIN: <?= htmlentities($goodtext); ?></p>
+<form>
+<input type="text" name="md5" size="60" />
+<input type="submit" value="Crack MD5"/>
+</form>
+<ul>
+</body>
+</html>
+
