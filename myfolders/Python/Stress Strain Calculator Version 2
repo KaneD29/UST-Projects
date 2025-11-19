@@ -1,0 +1,68 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sat Oct  4 19:23:50 2025
+
+@author: dungc
+"""
+
+"""
+Created on Wed Oct 1 01:58:15 2025
+@author: dungc
+"""
+
+units = ("N/m^2", "m/m")
+calculations_history = []
+unique_materials = set()
+
+flag = True
+while flag:
+    try:
+        # Get inputs
+        material = input("Enter material identifier: ")
+        force = float(input("Enter applied force (N): "))
+        area = float(input("Enter cross-sectional area (m^2): "))
+        length_orig = float(input("Enter original length (m): "))
+        length_chg = float(input("Enter change in length (m): "))
+
+        # Zero or negative guards
+        if area <= 0 or length_orig <= 0:
+            print("Error: Area and original length must be greater than zero.")
+            continue
+
+        # Perform calculations
+        stress = force / area
+        strain = length_chg / length_orig
+
+        # Store result in dictionary
+        calculation = {
+            "material": material,
+            "force (N)": force,
+            "area (m^2)": area,
+            "original length (m)": length_orig,
+            "change in length (m)": length_chg,
+            "stress (Pa)": stress,
+            "strain (m/m)": strain
+        }
+
+        calculations_history.append(calculation)
+        unique_materials.add(material)
+
+        print(f"\nStress: {stress:.3f} {units[0]}")
+        print(f"Strain: {strain:.6f} {units[1]}")
+
+        # Continue or exit
+        choice = input("\nDo you want to perform another calculation? (y/n): ").lower()
+        if choice != "y":
+            flag = False
+
+    except ValueError:
+        print("Error: Please enter numeric values only.")
+    except ZeroDivisionError:
+        print("Error: Division by zero occurred. Check your inputs.")
+
+# Session Summary
+print("\n===== Session Summary =====")
+for i, record in enumerate(calculations_history, start=1):
+    print(f"Calculation {i}: {record}")
+print("\nUnique Materials:", unique_materials)
+print("===========================")
