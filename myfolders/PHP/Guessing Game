@@ -1,0 +1,32 @@
+<?php
+$correct = 51;
+$guess = $_GET['guess'] ?? null;
+?>
+
+<!DOCTYPE html>
+<html>
+<head>
+<title>3c63dccb - Guessing Game for Aaron Kane Dungca</title>
+</head>
+<body>
+
+<h1>Welcome to my guessing game</h1>
+
+<?php
+if ($guess === null) {
+    echo "<p>Missing guess parameter</p>";
+} else if (strlen($guess) == 0) {
+    echo "<p>Your guess is too short</p>";
+} else if (!is_numeric($guess)) {
+    echo "<p>Your guess is not a number</p>";
+} else if ($guess < $correct) {
+    echo "<p>Your guess is too low</p>";
+} else if ($guess > $correct) {
+    echo "<p>Your guess is too high</p>";
+} else {
+    echo "<p>Congratulations - You are right</p>";
+}
+?>
+
+</body>
+</html>
